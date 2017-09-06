@@ -1,0 +1,514 @@
+\documentclass{article}
+\usepackage{verbatim}
+\usepackage{amsmath}
+
+\def\attribrisk{\texttt{attribrisk}}
+\addtolength{\textwidth}{.5in}
+\addtolength{\oddsidemargin}{-.25in}
+\setlength{\evensidemargin}{\oddsidemargin}
+
+%\VignetteIndexEntry{An Introduction to Attributable Risk}
+%\VignetteEngine{knitr::knitr}
+
+\title{Attributable Risk}
+\author{Louis Schenck \\
+ Elizabeth J. Atkinson \\
+ Cynthia S. Crowson \\
+Terry M. Therneau \vspace*{.3in} \\
+Mayo Clinic, Rochester, MN}
+
+\begin{document}
+<< echo=FALSE, include=FALSE, cache=FALSE>>=
+library(knitr)
+options(width=65)
+require(attribrisk)
+# Make output look like output, input like input
+opts_chunk$set(fig.with=7, fig.height=5.5, fig.path="figures/",
+               comment=NA, prompt=TRUE, tidy=FALSE, cache=FALSE,
+               warning=FALSE, error=FALSE,
+               out.width="\\textwidth", out.height="!")
+@
+\maketitle
+
+%\tableofcontents
+<< results="as.is", echo=FALSE>>=
+temp <- with(chapter.dat, table(cases, hbp)) 
+temp2 <- colSums(temp)
+tpct <- round(temp[2,] / colSums(temp) ,2)
+ar <- round(diff(tpct)/tpct[2], 2)
+@ 
+
+\section{Introductions and Definitions}
+The attribrisk package has been created to make attributable risk (AR) 
+inference easier to calculate.  
+This vignette gives only a small amount of theory, users who wish more are 
+directed to Khan \cite{kahn}.
+
+The term \emph{attributable risk} is used to refer to the amount of disease 
+in a population that can be attributed to a particular exposure.  
+The terms \emph{population attributable risk} and 
+\emph{etiologic fraction} have also been used to refer to the same concept.
+Consider the data from Whisnant et al \cite{whisnant} shown in table
+\ref{tab:whis}.
+Assume for the moment that this data were a simple sample of size
+\Sexpr{sum(temp)} from the population at large (which it is not).
+Then the rate of ischemic stroke among those without high blood pressure would
+be estimated as \Sexpr{temp[1,1]}/\Sexpr{temp2[1]}=\Sexpr{tpct[1]}
+while that in those with high blood pressure it is \Sexpr{tpct[2]}.
+The attributatable risk is the fraction of the strokes in the second group
+that is presumed to be directly due to their high blood pressure,
+namely $(\Sexpr{tpct[2]} - \Sexpr{tpct[1]})/ \Sexpr{tpct[2]} = \Sexpr{ar}$.
+
+\begin{table} \centering
+   \begin{tabular}{rcc} 
+    & Normal & High Blood Pressure \\ \hline
+<< results="as.is", echo=FALSE>>=
+cat("Controls &", temp[1,1], " &", temp[1,2], "\\\\ \n")
+cat("Stroke   &", temp[2,1], " &", temp[2,2], "\\\\ \\hline \n")
+cat("Total    &", temp2[1] , " &", temp2[2] , "\n")
+@ 
+\end{tabular}
+\caption{Table of data from Whisnant et al \cite{whisnant}.}
+\label{tab:whis}
+\end{table}
+
+
+In reality the data set above is not a population sample, but a collection
+of all ischemic stroke patients in Olmsted County over a defined period along
+with a set of age matched controls, and the proper calculation of AR becomes
+more complex in that case. 
+
+Define the following probabilities.  They may be interpeted as prevalence rates,
+incidence rates or proportions depending on the circumstances.
+
+\begin{center}
+\begin{tabular}{r c p{3in}}
+$ \text{P}(D) $ & - & probability of disease \\
+$ \text{P}(F) $ & - & probability of risk factor \\
+$ \text{P}(D | F) $ & - & conditional probability of disease among those with the factor \\
+$ \text{P}(D | \overline{F}) $ & - & conditional probability of disease among those without the factor \\
+$ \text{P}(F | D) $ & - & conditional probability of the factor being present among those who are diseased \\
+$ \text{P}(F | \overline{D}) $ & - & conditional probability of the factor being present among those not diseased \\
+$ \text{P}(D | F) / \text{P}(D | \overline{F} ) $ & - & relative risk (RR) \\
+\end{tabular}
+\end{center}
+
+The population attributable risk is defined as $ I^\ast / I $ where $ I $ 
+is the total number of diseased individuals in the population and $ I^\ast $ 
+is defined as the number attributed to a factor.  
+Assuming a homogeneous population, 
+$ I = N \text{P}(D) =$ expected number of diseased individuals in the population,
+$ I^\ast = N \text{P}(D) - N\text{P}(D | \overline{F}) = $ 
+excess number of diseased individuals.
+Then
+\begin{equation} \label{eq:ar1}
+ \text{AR} = I^{\ast} / I = \frac{\text{P}(D)-\text{P}(D|\overline{F})}{\text{P}(D)}
+\end{equation}
+
+This formula for AR requires estimates of the rate (prevalence or incidence) 
+of disease in the total population and the rate of disease in 
+those with the factor. 
+Using Bayes' theorem the equation can be expressed as 
+
+\begin{equation} \label{eq:ar2}
+ \text{AR} = \frac{\text{P}(F)(\text{RR} - 1)}{\text{P}(F) (\text{RR} - 1)  + 1}
+\end{equation}
+
+The formula for AR can also be represented by 
+\begin{equation} \label{eq:ar3}
+ \text{AR} = \frac{\text{P}(F | D )(\text{RR} - 1)}{\text(RR) }
+\end{equation}
+
+This formula is useful in case-control studies where $ \text{P}(F | D) $ 
+in the prevalence of the factors among the cases, 
+and RR  can be estimated using an odds ratio obtained from a 
+logistic regression with case/control status as the outcome. 
+Logisic regression, either stratified (for matched case-control studies) or
+unstratified, is the basis for the attribrisk function.
+
+\section{Examples}
+\subsection{Unmatched case-control design with dichotomous exposure and no confounders}
+
+\begin{comment}
+The data from Whisnat, et al 1996 concerning cerbral infarction (CI) and high blood pressure (HBP) is treated as 
+an unmatched design.
+
+\begin{center}
+\begin{tabular}{c || c | c | }
+                  & $CI$  & $\overline{CI}$ \\
+\hline \hline
+$HBP$             & 938   & 763             \\
+$\overline{HBP} $ & 384   & 559             \\
+\hline
+                  & 1322  & 1322             \\
+\end{tabular}
+\end{center}
+\end{comment}
+
+The data from Whisnant, et al 1996 concerning cerebral infarction (CI) 
+and high blood pressure (HBP) is treated as 
+an unmatched design \cite{whisnant}.
+Data can be found in the data frame chapter.dat in the attribrisk package.
+
+<< >>=
+require(attribrisk)
+data(chapter.dat)
+
+#Show first and last row.
+chapter.dat[c(1,2644),]
+
+#Summarize the relationship between hbp and case/control status.
+count <- table(chapter.dat$hbp, chapter.dat$cases)
+count
+@
+
+From this table the odds ratio and prevalence are
+\begin{align*}
+	\widehat{OR} & = \frac {(938 * 559)}{ (763 * 384)} = 1.79 \\
+        \hat{\text{P}}(F | D) & = \frac{938}{938 + 384} = 0.71 
+\end{align*}
+Using equation \ref{eq:ar3} we get
+\begin{equation*}  
+    \widehat{AR}  = \frac{0.71 * (1.79 - 1) }{1.79} =  0.313 
+\end{equation*}
+
+The R call for this is below.
+<< cache=TRUE, eval=TRUE >>=
+example1 <- attribrisk(cases ~ expos(hbp), data=chapter.dat)
+
+example1
+@
+
+Attributable risk is one of the few cases where a user may want to 
+calculate the estimate from summary data found in a paper, e.g.,
+data such as in table \ref{tab:whis}.  The function allows this
+via the use of case weights, as shown below. 
+The example starts by recreating the data from the table.
+<<wt1>>=
+tdata <- data.frame(case=c(0, 1, 0, 1),
+                    hbp =c(0, 0, 1, 1),
+                    count = c(559, 384, 763, 938))
+example1b <- attribrisk(case ~ expos(hbp), data=tdata, weight=count)
+example1b
+@ 
+
+The AR estimates in the above two fits are identical, but the standard errors
+are not.  
+This is because by default the \texttt{attribrisk} function uses a
+grouped jackknife estimate of variance based on $k=20$ groups, which leaves
+out one group at a time.
+Subjects are divided into the $k$ groups randomly and hence different runs will
+have slightly different jackknife errors.
+The full jackknife can be obtained by setting $k \ge n$ where $n$ is the
+data set size, but with a consequent increase in the compute time.
+Bootstrap standard errors and confidence intervals are also available.
+<<boot>>=
+example1boot <- attribrisk(cases ~ expos(hbp), data=chapter.dat, 
+   varmethod = "boot")
+example1boot
+@
+
+
+
+\subsection{Matched case-control design with 
+  dichotomous exposure and no confounders}
+
+This example uses attribrisk to estimate AR and its standard error in 
+a matched case-control design.  
+The data used in this
+example is the same as the previous example. 
+The pairs were matched on age and sex.  
+The variable \texttt{match.id} is used as a matching index.  
+For example, row 1 and 1323 were a matched pair since both 
+have \texttt{match.id} = 1.
+
+<< cache=T, tidy=FALSE, eval=TRUE >>=
+chapter.dat[chapter.dat$match.id==1,]
+
+example2 <- attribrisk(cases ~ strata(match.id) + expos(hbp), 
+   data=chapter.dat)
+
+example2
+@
+
+The special function \texttt{strata} is used in the formula to tell
+the attribrisk function which observations go together.
+There can be at most one matching index.
+The AR estimated in the unmatched design was 
+\Sexpr{round(example2$attribrisk,4)} which is similar to the unmatched value 
+of \Sexpr{round(example1$attribrisk, 4)} from the unmatched analysis.
+
+\subsection{More complex target values}
+
+The next two examples look at the computation when one or more adjusting
+factors are continuous, using a data set on cerebral infarctions (stroke).
+The following covariates are considered for each
+patient: age at study entry (age), diastolic blood pressure (diastolic)
+and smoking level (smoke).
+The age of the individual needs to be accounted for since older individuals
+are more likely to suffer a stroke.
+Age is a confounder, however, rather than an exposure variable since 
+everyone ages; we cannot ``adjust'' it to a different value via some
+change in lifestyle.
+The public health impact of changing smoking or diatolic blood pressure
+levels are the questions of interest.
+
+Consider ''smoke'' and ''diastolic'' factors as exposure variables. 
+Smoking status has 5 levels --- Current, 
+Former, Never, Unknown, and Uncertain ---  and  diastolic blood
+pressure is a continuous measure.
+The default action of the attribrisk function is to compute the effect
+of making all exposure variables equal to 0, 
+which is not sensible for blood pressure; a target value needs to be
+chosen by the user.
+The target values can be chosen to represent a hypothetical intervention
+or the desired level of the exposure, such as absence of the risk factor.
+
+Consider target values where all patients \emph{Never} smoked 
+and all subjects' diastolic blood pressure values were lowered 
+by 10\%. 
+
+<< cache=T, tidy=FALSE, eval=TRUE >>=
+# Build Targe
+data(stroke.dat)
+
+stroke.target <- data.frame(smoke = "Never",
+                            diastolic = .9*stroke.dat$diastolic)
+
+set.seed(21790)
+example4a <- attribrisk(
+   cases ~ age + expos(smoke) + expos(diastolic), 
+   data=stroke.dat, varmethod="boot", baseline = stroke.target)
+
+example4a
+@
+
+The estimated AR is \Sexpr{round(example4a$attribrisk, 3)} %$
+with the standard error of about \Sexpr{round(sqrt(example4a$var), 3)}. %$
+The estimated 95\% bootstrap confidence interval 
+suggests that if the entire population had never started smoking 
+and had 10\% lower blood pressure than they do currently,
+there would be between \Sexpr{round(100*example4a$boot.ci$percent[4])}  %$
+and \Sexpr{round(100*example4a$boot.ci$percent[5])} fewer strokes. %$
+
+Next, consider the target values where all current smokers quit 
+(i.e., change to former smokers) and the percent reduction in 
+diastolic blood pressure depends on the diastolic blood pressure value, 
+as in described in this table.  
+
+\begin{center}
+\begin{tabular}{ c c }
+  Current Diastolic BP & Percent Reduction \\ \hline
+  \textgreater 150 & 25\% \\
+  121 to 150 & 15\% \\
+  101 to 120 & 10\% \\
+   86 to 100 & 5\% \\
+   $\le 85 $ & no reduction \\
+\end{tabular}
+\end{center}
+
+<< cache=T, tidy=FALSE, eval=TRUE >>=
+# Build baseline 
+target <- cut(stroke.dat$diastolic, c(0, 85, 100, 120, 150, 500))
+reduce <- c(0, .05, .1, .15, .25)[as.numeric(target)]
+newbp <-with(stroke.dat, diastolic *(1-reduce))
+newsm <- with(stroke.dat, ifelse(smoke=="Current", "Former", smoke))
+
+stroke.target2 <- data.frame(diastolic = newbp,
+                             smoke = newsm)
+example4b <- attribrisk(
+   cases ~ age + expos(smoke) + expos(diastolic), 
+   data=stroke.dat, baseline = stroke.target2)
+
+print(example4b, digits=3)
+@
+So if all current smokers quit and people with high diastolic BP 
+reduced their BP, the AR would be about 
+\Sexpr{round(100*example4b$attribrisk,1)}\%  %$
+The different target values yielded quite different potential reductions for
+the amount of stroke, where the second is more realistic and the first
+perhaps only a pipe dream.
+
+\section{ Conclusion }
+
+The paper describes how to use the attribrisk function in R for
+unmatched and matched  
+case-control designs.  
+The attribrisk function enables modeling with any number of 
+confounders/adjustors and exposures, 
+which can be discrete or continuous, 
+and allows for flexibility in defining target values.  
+
+ 
+\newpage
+\appendix
+\section{Comparing Results to Benichou (1991) }
+Data from table I of Benichou and Gail \cite{benichou1},
+which computes attributable risks for esophogeal cancer due to smoking
+and alchohol,
+is be found in the data frame \emph{benichou} in the attribrisk package. 
+The following table compares all the AR results reported by Benichou in 
+tables III, IV, and V; and the results calculated using the attribrisk package.
+The standard errors shown for the attribrisk function are from the default
+20-fold grouped jackknife. When the full $n$-fold jackknife is used they
+all agree with Benichou and Gail, but the resulting vignette takes longer
+to run than CRAN guidelines allow.
+
+\begin{center}
+  \begin{tabular}{rrrrrr}
+    && \multicolumn{2}{c}{Benichou \& Gail}& \multicolumn{2}{c}{attribrisk} \\
+    Model &Formula & $\widehat{AR}$ & $\widehat{SD}$ & 
+%     Model &          $\widehat{AR}$ & $\widehat{SD}$ & 
+                    $\widehat{AR}$ & $\widehat{SD}$ \\ \hline
+<<bgfit, tidy=FALSE, echo=FALSE, results='asis'>>=
+data(benichou)
+
+bg_model <- 1:18
+bg_formula <- c('$\\alpha + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot Ag$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S \\cdot Ag$',
+                '$\\alpha + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot Ag$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S \\cdot Ag$',
+                '$\\alpha + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot Ag$',
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S$', 
+                '$\\alpha_1 Ag + \\alpha_2 S + \\alpha_3 Ag \\cdot S + \\beta Al + \\gamma Al \\cdot S \\cdot Ag$',
+                '$\\alpha + \\beta X$',
+                '$\\alpha Ag + \\beta X$',
+                '$\\alpha Ag + \\beta X + \\gamma Ag X$')
+
+bg_ar <- c(0.395, 0.382, 0.380, 0.381, 0.380,
+           0.709, 0.719, 0.723, 0.703, 0.700,
+           0.709, 0.721, 0.726, 0.703, 0.701,
+           0.862, 0.866, 0.868)
+
+bg_sd <- c(0.042, 0.044, 0.044, 0.044, 0.044,
+           0.051, 0.050, 0.050, 0.054, 0.056,
+           0.051, 0.050, 0.050, 0.054, NA,
+           0.046, 0.045, 0.044)
+
+ar_formula <- c(cases ~ expos(alcohol80),
+                cases ~ age * smoke + expos(alcohol80),
+                cases ~ age * (smoke + expos(alcohol80)),
+                cases ~ smoke * (age + expos(alcohol80)),
+                cases ~ age * smoke * expos(alcohol80),
+
+                cases ~ expos(alcohol40),
+                cases ~ age * smoke + expos(alcohol40),
+                cases ~ age * (smoke + expos(alcohol40)),
+                cases ~ smoke * (age + expos(alcohol40)),
+                cases ~ age * smoke * expos(alcohol40),
+
+                cases ~ expos(alcohol),
+                cases ~ age * smoke + expos(alcohol),
+                cases ~ age * (smoke + expos(alcohol)),
+                cases ~ smoke * (age + expos(alcohol)),
+                cases ~ age * smoke * expos(alcohol),
+
+                cases ~ expos(fsmoke.alc),
+                cases ~ age + expos(fsmoke.alc),
+                cases ~ age * expos(fsmoke.alc))
+
+ar_jk <- rep(0, 18)
+sd_jk <- rep(0, 18)
+
+benichou$fsmoke.alc <-  factor(benichou$smoke.alc,
+                               levels=c('Unexposed', 'Exposed'))
+
+for (i in 1:length(ar_formula)){
+  t <- attribrisk(ar_formula[[i]], data=benichou, 
+                  varmethod = "jackknife")
+
+  ar_jk[i] <- t$attribrisk
+  sd_jk[i] <- sqrt(t$var)
+}
+
+bg_df <- data.frame(model=bg_model, 
+                    #formula = bg_formula,
+                    formula = unlist(lapply(ar_formula, function(x) 
+                                     deparse(x[[3]]))), 
+                    ar = format(round(bg_ar,2)), 
+                    sd = format(round(bg_sd,3)), 
+                    ar_jk = format(round(ar_jk,2)),
+                    sd_jk= format(round(sd_jk,3)),
+                    stringsAsFactors = FALSE)
+
+
+#bg_df <- bg_df[,-2] #TMT addition: take out the formula
+
+
+for (i in 1:nrow(bg_df)) {
+    cat (paste(bg_df[i,], collapse=" & "))
+    if (i == nrow(bg_df)) cat("\n") else cat("\\\\ \n")
+}
+@
+\end{tabular}
+\end{center}
+
+In models 1--5, alcohol consumption was considered a binary exposure factor 
+(0--79; 80+ g/day).  Age, smoking, and 
+their interactions were used as main effects in models 2--5.
+The attributable risk shows the estimated effect if all those consuming more
+than 80 g/day were to convert to the lowest category of 0--39.
+
+In models 6--10, alcohol consumption was split at 40g/day.  
+The estmated effect of having all these subjects decrease to
+0--39 is much larger,
+largely due to the greater number of subjects affected by the intervention.
+Age, smoking, and 
+their interactions were used as main effects in models 7--10. 
+
+In models 11--15, alcohol consumption was considered a polychotomus
+exposure factor (0--39; 40--79, 80--119, 120+ g/day). 
+The target alcohol value is still the first category of 0--39, as in the
+prior set of models and the same subjects are affected.
+The impact changes slightly since the underlying model has a different 
+risk estimate for each of the 40--79, 80--119 and 120+ groups.
+In model 15, twenty-four parameters are 
+used to model the interactions of alcohol consumption with smoking and age. 
+Model 15 was a saturated model and the delta method cannot
+provide an estimate of the standard error.  Note: Even though model 15 was 
+saturated, the jackknife standard error estimated using 
+the attribrisk package is reasonable.
+
+In models 16--18 the exposure is the single binary variable for either 
+smoking or drinking above the baseline level.
+
+\begin{thebibliography}{1} 
+
+\bibitem{benichou1} Benichou J; 
+  {\em Methods of Adjustment for Estimating the Attributable Risk in Case-Control Studies: A Review}. 
+  Statistics in Medicine (1991) 10:1753-1773.
+
+\bibitem{benichou2} Benichou J, Gail M; 
+  {\em Variance Calculations and Confidence Intervals for Estimates of the Attributable Risk Based on Logistic Models}. 
+  Biometrics (1990) 46:991-1003.
+
+\bibitem{kahn} Kahn M, O'Fallon W, Sicks J; 
+  {\em Technical Report Series No. 54, Generalized Population Attributable Risk
+Estimation}. 
+  Department of Health Science Research, Mayo Clinic, Rochester, 
+  Minnesota (2000).
+
+
+\bibitem{kleinbaum} Kleinbaum D, Kupper L and Morgenstern H;  
+  {\em Epidemiologic Research: Principles and
+Quantitative Methods Lifetime Learning Publications}. 
+  Belmont, California (1982).
+
+\bibitem{levin} Levin M;  {\em The occurrence of lung cancer in man}. 
+  Acta Un Intern Cancer (1953) 19:531-541.
+
+\bibitem{whisnant} Whisnant J, Wiebers D, O'Fallon W, Sicks J, Frye R; 
+  {\em A population-based model of risk factors for ischemic stroke: Rochester, Minnesota}. 
+  Neurology (1996) 47:1420-1428.
+
+\end{thebibliography}
+
+\end{document}

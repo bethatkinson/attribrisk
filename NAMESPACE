@@ -1,0 +1,5 @@
+import(boot)
+import(survival)
+export(attribrisk, attribrisk.fit)
+S3method(summary,attribrisk)
+S3method(print,attribrisk)
