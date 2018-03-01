@@ -9,7 +9,7 @@
   \item{bootci}{ Parameters passed to the \code{boot.ci} function. }
 }
 
-\value{ A \code{list} of values that will be paaaed into \code{boot} and \code{boot.ci}}
+\value{ A \code{list} of values that will be passed into \code{boot} and \code{boot.ci}}
 
 \seealso{
 \code{\link[boot]{boot}},

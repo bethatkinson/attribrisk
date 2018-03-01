@@ -61,7 +61,7 @@
   \item{x,y}{logical values indicating whether the model
     matrix and/or response used in the fitting process should be returned.}
   \item{\dots}{other arguments such as \code{nboot},
-    normally passed to the \code{attribrisk.control} rountine.}
+    normally passed to the \code{attribrisk.control} routine.}
 
 }
 \value{

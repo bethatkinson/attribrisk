@@ -15,7 +15,7 @@
 }
 \details{
   If there were bootstrap confidence intervals created using multiple
-  methods, e.g., 'percentile', 'BCa', ect, then by default only
+  methods, e.g., 'percentile', 'BCa', etc., then by default only
   the first of them is printed.  To see all confidence intervals
   print the \code{boot.ci} component of the attribrisk object.
   }

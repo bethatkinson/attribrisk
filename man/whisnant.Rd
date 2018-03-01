@@ -9,7 +9,7 @@
   \describe{
     \item{\code{infarct}}{ Stroke indicator. (1=Stroke, 0=Normal) }
     \item{\code{hbp}}{High blood pressure indicator. (1=High Blood Pressure, 0=Normal ) }
-    \item{\code{y}}{ The number of patients in the obaserved categorys }
+    \item{\code{y}}{ The number of patients in the observed categories }
   }
 }
 \keyword{datasets}
