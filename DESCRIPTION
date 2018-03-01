@@ -13,10 +13,12 @@ Description: Estimates population (etiological) attributable risk for
     list containing the estimated attributable risk, estimates of coefficients,
     and their standard errors, from the (conditional, If necessary) logistic
     regression used for estimating the relative risk.
-Suggests: knitr,xtable,testthat
-Depends: survival,boot
+Suggests: knitr, xtable, testthat
+Depends: survival, boot
+Imports: methods
 URL: https://github.com/bethatkinson/attribrisk, https://cran.r-project.org/package=attribrisk
 BugReports: https://github.com/bethatkinson/attribrisk/issues
 License: LGPL (>= 2)
 LazyData: Yes
 LazyLoad: Yes
+RoxygenNote: 6.0.1

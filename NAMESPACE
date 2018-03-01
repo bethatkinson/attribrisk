@@ -3,3 +3,8 @@ import(survival)
 export(attribrisk, attribrisk.fit)
 S3method(summary,attribrisk)
 S3method(print,attribrisk)
+importFrom("methods", "hasArg")
+importFrom("stats", ".getXlevels", "binomial", "coef", "coefficients",
+           "glm.control", "glm.fit", "model.frame", "model.matrix",
+           "model.offset", "model.response", "model.weights", "qnorm",
+           "terms", "var")
