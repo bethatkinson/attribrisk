@@ -1,7 +1,7 @@
 Package: attribrisk
 Title: Population Attributable Risk
 Version: 0.1.1
-Date: 2014-03-06
+Date: 2017-03-02
 Authors@R: c(
    person("Louis", "Schenck", email="louis.schenck@gmail.com", role="aut",comment="Former Maintainer"),
    person("Elizabeth", "Atkinson", email="atkinson@mayo.edu",role=c("cre","aut")), 
