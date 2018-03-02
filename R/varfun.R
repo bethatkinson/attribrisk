@@ -105,5 +105,5 @@ attribrisk_boot <- function(match.id, X, Y, weights,
                                  offset=offset, xbase=xbase))
     b.ci <- do.call(boot.ci, c(list(boot.out= fit.ar, conf=conf), bci))
 
-    list(var=var(fit.ar$t), boot=fit.ar, boot.ci=b.ci)
+    list(var=stats::var(fit.ar$t), boot=fit.ar, boot.ci=b.ci)
 }

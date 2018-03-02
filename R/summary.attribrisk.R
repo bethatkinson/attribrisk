@@ -13,7 +13,7 @@
 summary.attribrisk <- function(object, ...)
   {
     digits <- getOption("digits");
-    if (hasArg(digits)) {
+    if (methods::hasArg(digits)) {
        digits <- list(...)$digits
     }
       
@@ -28,7 +28,7 @@ summary.attribrisk <- function(object, ...)
         for (i in 1:length(object$attribrisk.var)) {
           boot.arg <- deparse(object$call$var.config[[i+ 1]])
           if ("boot" %in% names(object$attribrisk.var[[i]])){
-            cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(var(object$attribrisk.var[[i]]$boot$t)), digits=digits), '\n')
+            cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(stats::var(object$attribrisk.var[[i]]$boot$t)), digits=digits), '\n')
           } else {
             cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(object$attribrisk.var[[i]]), digits=digits), '\n')
           }
@@ -36,7 +36,7 @@ summary.attribrisk <- function(object, ...)
       } else {
          boot.arg <- deparse(object$call$var.config)
          if ("boot" %in% names(object$attribrisk.var)){
-           cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(var(object$attribrisk.var$boot$t)), digits=digits), '\n')
+           cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(stats::var(object$attribrisk.var$boot$t)), digits=digits), '\n')
          } else {
            cat("    The standard error of AR using ", boot.arg, " = ", round(sqrt(object$attribrisk.var), digits=digits), '\n')
          }

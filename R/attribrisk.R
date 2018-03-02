@@ -19,8 +19,8 @@ attribrisk <- function(formula, data, weights, subset, na.action,
     temp[[1]] <- as.name('model.frame')  # change the function called
     
     special <- c("strata", "expos")
-    temp$formula <- if(missing(data)) terms(formula, special)
-                    else              terms(formula, special, data=data)
+    temp$formula <- if(missing(data)) stats::terms(formula, special)
+                    else              stats::terms(formula, special, data=data)
 
     # Make "expos" visible for attribRisk formulas without making it 
     #   visible globally
@@ -30,10 +30,10 @@ attribrisk <- function(formula, data, weights, subset, na.action,
     
     mf <- eval(temp, parent.frame())  #evaluate the model.frame call
     Terms <- terms(mf)
-    xlevels <- .getXlevels(Terms, mf)
+    xlevels <- stats::.getXlevels(Terms, mf)
 
     ## Extract relevant variables
-    Y <- model.response(mf)
+    Y <- stats::model.response(mf)
     if (is.null(Y)) stop("formula does not have a response variable")
     if (is.factor(Y)) {
         if (length(levels(Y)) > 2) 
@@ -45,9 +45,9 @@ attribrisk <- function(formula, data, weights, subset, na.action,
     n <- length(Y)
     if (n==0) stop("No observations in the data set")
         
-    weights <- model.weights(mf)
+    weights <- stats::model.weights(mf)
     if (length(weights)==0) weights <- rep(1.0, n)
-    offset <- model.offset(mf)
+    offset <- stats::model.offset(mf)
     if (length(offset)==0) offset <- rep(0.0, n)
     
 
@@ -93,7 +93,7 @@ attribrisk <- function(formula, data, weights, subset, na.action,
     }
     else Terms2 <- Terms
 
-    X <- model.matrix(Terms2, mf)
+    X <- stats::model.matrix(Terms2, mf)
     
     #  The AR estimate is associated with some change: all the smokers into
     #    non-smokers, or all cholesterol levels to < 210, or ...
@@ -133,9 +133,9 @@ attribrisk <- function(formula, data, weights, subset, na.action,
         }
 
         if (missing(subset))
-            mbase <- model.frame(tform, data=baseline, xlev=xlevels,
+            mbase <- stats::model.frame(tform, data=baseline, xlev=xlevels,
                                  na.action=function(x) x)
-        else mbase <- model.frame(tform, data=baseline, xlev=xlevels,
+        else mbase <- stats::model.frame(tform, data=baseline, xlev=xlevels,
                                   na.action=function(x) x, subset=subset)
 
         # Delete any rows from mbase that were deleted due to missing in

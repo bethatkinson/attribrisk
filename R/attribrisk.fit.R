@@ -18,8 +18,8 @@
 attribrisk.fit <- function(x, y, w, offset, match, xbase, 
                       fit=FALSE) {
     if (is.null(match)) { # use glm
-        fit1 <- glm.fit(x, y, weights=w, family=binomial(), offset=offset,
-                       control=glm.control())
+        fit1 <- stats::glm.fit(x, y, weights=w, family=stats::binomial(), offset=offset,
+                       control=stats::glm.control())
         cases <- which(y==1)
     }
     else {
@@ -31,10 +31,10 @@ attribrisk.fit <- function(x, y, w, offset, match, xbase,
     }
 
     ##LAS## if fit1 has a singularity assume a zero for the undefined coeffcient
-    temp <- xbase %*% ifelse(is.na(coef(fit1)), 0, coef(fit1))
+    temp <- xbase %*% ifelse(is.na(stats::coef(fit1)), 0, stats::coef(fit1))
     attribrisk <- 1- sum((w* exp(-temp))[cases])/sum(w[cases])
 
-    if (any(is.na(coefficients(fit1)))) 
+    if (any(is.na(stats::coefficients(fit1)))) 
         warning("at least one coefficient is na when fitting the regression for estimating attributable risk")
     
 

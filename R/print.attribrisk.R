@@ -29,7 +29,7 @@ print.attribrisk <- function(x, ...) {
             temp <- c(temp, x$boot.ci[[type]][4:5])
         }
         else {
-            z <- qnorm((1-x$conf)/2)
+            z <- stats::qnorm((1-x$conf)/2)
             temp <- c(temp, temp[1] + c(-1,1)*z*temp[2])
         }
 
