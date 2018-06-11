@@ -16,7 +16,7 @@ Description: Estimates population (etiological) attributable risk for
 Suggests: knitr, xtable, testthat
 Depends: survival, boot
 Imports: methods
-URL: https://github.com/bethatkinson/attribrisk, https://cran.r-project.org/package=attribrisk
+URL: https://github.com/bethatkinson/attribrisk, https://CRAN.R-project.org/package=attribrisk
 BugReports: https://github.com/bethatkinson/attribrisk/issues
 License: LGPL (>= 2)
 LazyData: Yes
