@@ -1,5 +1,5 @@
-[![CRAN_STATUS_BADGE](http://www.r-pkg.org/badges/version/attribrisk)](https://CRAN.R-project.org/package=attribrisk)
-[![Downloads](http://cranlogs.r-pkg.org/badges/attribrisk)](https://CRAN.R-project.org/package=attribrisk)
+[![CRAN_STATUS_BADGE](https://www.r-pkg.org/badges/version/attribrisk)](https://CRAN.R-project.org/package=attribrisk)
+[![Downloads](https://cranlogs.r-pkg.org/badges/attribrisk)](https://CRAN.R-project.org/package=attribrisk)
 [![Travis-CI Build Status](https://travis-ci.org/bethatkinson/attribrisk.svg?branch=master)](https://travis-ci.org/bethatkinson/attribrisk)
 
 # The `attribrisk` Package
