@@ -9,4 +9,4 @@ bibentry(bibtype = "Manual",
                     person("Therneau", "Terry")),
          year = year,
          note = note,
-         url = "https://CRAN.R-project.org/package=attribRisk")
+         url = "https://CRAN.R-project.org/package=attribrisk")
